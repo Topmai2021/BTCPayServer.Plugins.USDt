@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Security.Claims;
 using BTCPayServer.Payments;
+using BTCPayServer.Plugins.USDt.Configuration;
 using BTCPayServer.Plugins.USDt.Services;
 using BTCPayServer.Plugins.USDt.Configuration.EVM;
 using BTCPayServer.Plugins.USDt.Configuration.Tron;
@@ -8,6 +9,9 @@ using BTCPayServer.Plugins.USDt.Services.Payments;
 using BTCPayServer.Tests;
 using BTCPayServer.Client.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Configuration;
+using NBitcoin;
+using NBXplorer;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -39,7 +43,7 @@ public class FastTests : UnitTestBase
             12.34m,
             false);
 
-        Assert.Equal("TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs?amount=12.34", result);
+        Assert.Equal("tron:TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs?amount=12.34", result);
     }
 
     [Fact]
@@ -50,7 +54,7 @@ public class FastTests : UnitTestBase
             12.34m,
             true);
 
-        Assert.Equal("TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs", result);
+        Assert.Equal("tron:TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs", result);
     }
 
     [Fact]
@@ -121,6 +125,39 @@ public class FastTests : UnitTestBase
         Assert.Equal(
             "ethereum:0xdac17f958d2ee523a2206206994597c13d831ec7@1/transfer?address=0x742d35cc6634c0532925a3b844bc454e4438f44e&uint256=0",
             result);
+    }
+
+    [Fact]
+    public void BscPaymentLinkUsesBscChainIdAndEighteenDecimals()
+    {
+        var result = EVMUSDtPaymentLinkExtension.BuildPaymentLink(
+            "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+            "0x55d398326f99059ff775485246999027b3197955",
+            56,
+            18,
+            1.23m);
+
+        Assert.Equal(
+            "ethereum:0x55d398326f99059ff775485246999027b3197955@56/transfer?address=0x742d35cc6634c0532925a3b844bc454e4438f44e&uint256=1230000000000000000",
+            result);
+    }
+
+    [Fact]
+    public void MainnetConfigurationIncludesBscUsdt()
+    {
+        var configurations = USDtConfigurationProvider.GetEVMUSDtLikeDefaultConfigurationItems(
+            new NBXplorerNetworkProvider(ChainName.Mainnet),
+            new ConfigurationBuilder().Build());
+
+        var bscConfig = configurations[new PaymentMethodId("USDT-BSC")];
+
+        Assert.Equal(Constants.BscChainName, bscConfig.Chain);
+        Assert.Equal("USDt", bscConfig.Currency);
+        Assert.Equal(18, bscConfig.Divisibility);
+        Assert.Equal(56, bscConfig.ChainId);
+        Assert.Equal("0x55d398326f99059ff775485246999027b3197955", bscConfig.SmartContractAddress);
+        Assert.Equal(new Uri("https://bsc-rpc.publicnode.com"), bscConfig.JsonRpcUri);
+        Assert.Equal("https://bscscan.com/tx/{0}", bscConfig.BlockExplorerLink);
     }
 
     [Fact]
@@ -336,6 +373,39 @@ public class FastTests : UnitTestBase
     }
 
     [Fact]
+    public void EvmListenerKeepsMultipleTransfersFromSameTransaction()
+    {
+        var trackedAddresses = new[]
+        {
+            "0x742d35cc6634c0532925a3b844bc454e4438f44e",
+            "0x1111111111111111111111111111111111111111"
+        };
+
+        var matches = EVMUSDtListener.ToTransferMatchSnapshots(
+            [
+                new EVMUSDtListener.TransferLogSnapshot(
+                    trackedAddresses[0],
+                    "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    123,
+                    "0xabc",
+                    "7",
+                    false),
+                new EVMUSDtListener.TransferLogSnapshot(
+                    trackedAddresses[1],
+                    "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    456,
+                    "0xabc",
+                    "8",
+                    false)
+            ],
+            trackedAddresses);
+
+        Assert.Equal(2, matches.Count);
+        Assert.Contains(matches, match => match.TransactionId == "abc-7" && match.DestinationKey == trackedAddresses[0]);
+        Assert.Contains(matches, match => match.TransactionId == "abc-8" && match.DestinationKey == trackedAddresses[1]);
+    }
+
+    [Fact]
     public void EvmListenerDetectsHeadLagEthGetLogsErrors()
     {
         var exception = new Exception("block range extends beyond current head block: eth_getLogs");
@@ -354,6 +424,8 @@ public class FastTests : UnitTestBase
     [Theory]
     [InlineData("POLYGON", 2)]
     [InlineData("AMOY", 2)]
+    [InlineData("BSC", 2)]
+    [InlineData("BSC_TESTNET", 2)]
     [InlineData("ETHEREUM", 1)]
     public void EvmListenerUsesExpectedHeadLagPerChain(string chain, long expectedLag)
     {

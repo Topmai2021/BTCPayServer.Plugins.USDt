@@ -62,7 +62,7 @@ public class EVMUSDtListener(
 
     protected override long GetHeadLagBlocks(EVMUSDtLikeConfigurationItem configurationItem)
     {
-        return configurationItem.Chain is Constants.PolygonChainName or Constants.AmoyChainName ? 2 : 1;
+        return configurationItem.Chain is Constants.PolygonChainName or Constants.AmoyChainName or Constants.BscChainName or Constants.BscTestnetChainName ? 2 : 1;
     }
 
     protected override IDisposable? BeginLoggingScope(PaymentMethodId paymentMethodId)
@@ -127,7 +127,7 @@ public class EVMUSDtListener(
                     change.Event.From,
                     change.Event.Value,
                     change.Log.TransactionHash,
-                    change.Log.TransactionIndex?.ToString() ?? string.Empty,
+                    change.Log.LogIndex?.ToString() ?? change.Log.TransactionIndex?.ToString() ?? string.Empty,
                     change.Log.Removed)),
                 invoicesPerAddress.Keys)
             .Select(match => new USDtTransferMatch(
@@ -169,7 +169,7 @@ public class EVMUSDtListener(
                 change.From,
                 change.To,
                 change.Value,
-                $"{change.TransactionHash.Replace("0x", "")}-{change.TransactionIndex}"))
+                $"{change.TransactionHash.Replace("0x", "")}-{change.LogIndex}"))
             .Where(match => destinationKeySet.Contains(match.DestinationKey))
             .DistinctBy(match => match.TransactionId)
             .ToArray();
@@ -187,7 +187,7 @@ public class EVMUSDtListener(
         string From,
         BigInteger Value,
         string TransactionHash,
-        string TransactionIndex,
+        string LogIndex,
         bool Removed);
 
     internal sealed record TransferMatchSnapshot(

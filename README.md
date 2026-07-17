@@ -8,7 +8,7 @@ The plugin extends the functionality of BTCPay Server, a self-hosted cryptocurre
 ## 🎨 Features
 
 - **USDt Payments**: Receive USDt payments directly on your BTCPay Server instance.
-- **Multi-Chain Support**: Accept USDt on TRON, Ethereum, and Polygon.
+- **Multi-Chain Support**: Accept USDt on TRON, Ethereum, Polygon, and BNB Smart Chain (BSC).
 - **Customizable Settings**: Configure JSON RPC endpoints and addresses per blockchain to suit your requirements.
 - **Invoice Generation**: Generate invoices with blockchain addresses as payment reception.
 - **Blockchain Monitoring**: Scan supported blockchains to detect payments in full, overpaid, or partial amounts.
@@ -19,6 +19,7 @@ The plugin extends the functionality of BTCPay Server, a self-hosted cryptocurre
 - [x] TRON
 - [x] Ethereum
 - [x] Polygon
+- [x] BNB Smart Chain (BSC)
 
 ## 📗 Requirements
 
@@ -51,6 +52,19 @@ This plugin aims to cover USDt payment over different chains, a rigorous naming 
 - Blockchain: Polygon
 - PaymentMethodId for USDt: USDT-Polygon
 - Polygon specific implementation: Polygon* and PolygonUSDtLike* for ERC20 compatible stuff
+
+### BNB Smart Chain (BSC)
+- Blockchain: BSC
+- PaymentMethodId for USDt: USDT-BSC
+- BSC specific implementation: reuses the EVMUSDtLike* implementation
+- Mainnet chain ID: 56
+- Mainnet USDt/BEP-20 contract: `0x55d398326f99059ff775485246999027b3197955`
+- Default RPC endpoint: `https://bsc-rpc.publicnode.com`
+- Block explorer: `https://bscscan.com/tx/{0}`
+- Testnet chain ID: 97
+- Testnet RPC endpoint: `https://bsc-testnet-rpc.publicnode.com`
+- Testnet block explorer: `https://testnet.bscscan.com/tx/{0}`
+- Testnet smart contract address is intentionally unconfigured by default. Configure a BEP-20 test token contract in the plugin server settings before testing BSC testnet payments.
 
 
 ## 💚 Support

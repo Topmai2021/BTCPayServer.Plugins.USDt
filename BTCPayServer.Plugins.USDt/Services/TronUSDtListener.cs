@@ -92,7 +92,7 @@ public class TronUSDtListener(
                 TronUSDtAddressHelper.HexToBase58(t.Event.From),
                 TronUSDtAddressHelper.HexToBase58(t.Event.To),
                 t.Event.Value,
-                $"{t.Log.TransactionHash.Replace("0x", "")}-{t.Log.TransactionIndex}"))
+                $"{t.Log.TransactionHash.Replace("0x", "")}-{(t.Log.LogIndex?.ToString() ?? t.Log.TransactionIndex?.ToString() ?? string.Empty)}"))
             .Where(match => invoicesPerAddress.ContainsKey(match.DestinationKey))
             .ToArray();
     }
