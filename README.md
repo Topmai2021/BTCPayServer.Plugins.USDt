@@ -23,12 +23,22 @@ The plugin extends the functionality of BTCPay Server, a self-hosted cryptocurre
 
 ## 📗 Requirements
 
-- BTCPay Server: Make sure you have a running instance of BTCPay Server. You can find more information and installation instructions [here](https://docs.btcpayserver.org/).
+- BTCPay Server 2.4.5 or newer. This branch is built and unit-tested against 2.4.5; newer releases require their own compatibility check.
 - A compatible wallet for each chain you want to use (e.g., Ledger, MetaMask, TrustWallet...) to generate and manage addresses for receiving USDt payments.
 
 ## 🚀 Installation
 
-Install the plugin from the BTCPay Server > Settings > Plugin > Available Plugins, and restart.
+Build a clean Release package with `BTCPayServer.PluginPacker`, then upload the `.btcpay` file under **Manage Plugins > Upload Plugin** and restart BTCPay Server. Test installation, store configuration, invoice creation, payment detection, and settlement on a disposable instance before accepting mainnet funds. A successful build and unit tests alone do not validate those live workflows.
+
+From the repository root, with the BTCPay Server submodule initialized:
+
+```sh
+dotnet test --project BTCPayServer.Plugins.USDt.Tests/BTCPayServer.Plugins.USDt.Tests.csproj --configuration Release
+dotnet build BTCPayServer.Plugins.USDt/BTCPayServer.Plugins.USDt.csproj --configuration Release
+dotnet run --project submodules/btcpayserver/BTCPayServer.PluginPacker/BTCPayServer.PluginPacker.csproj --configuration Release -- BTCPayServer.Plugins.USDt/bin/Release/net10.0 BTCPayServer.Plugins.USDt artifacts
+```
+
+The BSC testnet configuration does not include a token contract. Supply a test-token contract address before testing BSC payments on testnet.
 
 ## 🧑‍💻 Developing
 ### Naming convention

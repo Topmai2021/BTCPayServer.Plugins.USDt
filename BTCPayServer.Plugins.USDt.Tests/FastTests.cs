@@ -6,7 +6,6 @@ using BTCPayServer.Plugins.USDt.Services;
 using BTCPayServer.Plugins.USDt.Configuration.EVM;
 using BTCPayServer.Plugins.USDt.Configuration.Tron;
 using BTCPayServer.Plugins.USDt.Services.Payments;
-using BTCPayServer.Tests;
 using BTCPayServer.Client.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Configuration;
@@ -18,13 +17,8 @@ using Xunit;
 namespace BTCPayServer.Plugins.USDt.Tests;
 
 [Trait("Fast", "Fast")]
-public class FastTests : UnitTestBase
+public class FastTests
 {
-    public FastTests(ITestOutputHelper helper) : base(helper)
-    {
-    }
-
-    
     [Fact]
     public void TronConversion()
     {
@@ -466,7 +460,8 @@ public class FastTests : UnitTestBase
             new ModelStateDictionary(),
             config,
             new ClaimsPrincipal(),
-            previousConfig);
+            previousConfig,
+            new BTCPayServer.Data.StoreData());
     }
 
     private static EVMUSDtLikeConfigurationItem CreateEvmConfiguration()
